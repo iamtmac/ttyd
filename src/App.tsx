@@ -342,7 +342,7 @@ export default function App() {
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'dashboard' ? 'bg-black text-white' : 'hover:bg-black/5'}`}
           >
             <LayoutDashboard size={18} />
-            招商引资驾驶舱
+            招投一体驾驶舱
           </button>
           <button 
             onClick={() => {
@@ -431,7 +431,7 @@ export default function App() {
             <header className="h-14 border-b border-black/5 flex items-center px-6 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
               <div className="flex items-center gap-2">
                 <LayoutDashboard size={18} className="text-black/40" />
-                <h2 className="text-sm font-bold uppercase tracking-widest">招商引资驾驶舱</h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest">招投一体驾驶舱</h2>
               </div>
             </header>
             
