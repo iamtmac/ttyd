@@ -345,15 +345,21 @@ export default function App() {
             招商引资驾驶舱
           </button>
           <button 
-            onClick={() => setMode('documents')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'documents' ? 'bg-black text-white' : 'hover:bg-black/5'}`}
+            onClick={() => {
+              setMode('documents');
+              setActiveFileId(null);
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'documents' && !activeFileId ? 'bg-black text-white' : 'hover:bg-black/5'}`}
           >
             <FileText size={18} />
             项目处理中心
           </button>
           <button 
-            onClick={() => setMode('meetings')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'meetings' ? 'bg-black text-white' : 'hover:bg-black/5'}`}
+            onClick={() => {
+              setMode('meetings');
+              setActiveFileId(null);
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'meetings' && !activeFileId ? 'bg-black text-white' : 'hover:bg-black/5'}`}
           >
             <Mic size={18} />
             会议纪要录音
@@ -603,6 +609,13 @@ export default function App() {
             <div className="flex-1 overflow-y-auto p-12 bg-[#F9F9F7]">
               {activeFile?.meetingMinutes ? (
                 <div className="max-w-4xl mx-auto space-y-8">
+                  <button 
+                    onClick={() => setActiveFileId(null)}
+                    className="flex items-center gap-2 text-xs font-bold text-black/40 hover:text-black transition-colors mb-4"
+                  >
+                    <ArrowRight size={14} className="rotate-180" />
+                    返回会议列表
+                  </button>
                   <div className="bg-white rounded-[40px] p-12 shadow-sm border border-black/5">
                     <div className="flex justify-between items-start mb-8">
                       <div>
@@ -675,23 +688,55 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-                  <div className="w-24 h-24 bg-black/5 rounded-[40px] flex items-center justify-center">
-                    <Mic size={40} className="text-black/20" />
+                <div className="max-w-6xl mx-auto space-y-8">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h3 className="text-3xl font-bold tracking-tight">会议纪要存档</h3>
+                      <p className="text-sm text-black/40">管理并查阅所有已录制的项目访谈与内部会议</p>
+                    </div>
+                    <button 
+                      onClick={startRecording}
+                      className="px-6 py-3 bg-black text-white rounded-2xl font-bold flex items-center gap-2 hover:scale-105 transition-transform"
+                    >
+                      <Mic size={18} />
+                      开启新录音
+                    </button>
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold">开启会议录音</h3>
-                    <p className="text-sm text-black/40 max-w-xs mx-auto">
-                      点击下方按钮开始录制会议。结束后，AI 将自动为您生成结构化的会议纪要。
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    {files.filter(f => f.meetingMinutes).map(file => (
+                      <button 
+                        key={file.id}
+                        onClick={() => setActiveFileId(file.id)}
+                        className="bg-white p-8 rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-all text-left group"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="p-3 bg-black/5 rounded-2xl group-hover:bg-black group-hover:text-white transition-colors">
+                            <Mic size={20} />
+                          </div>
+                          <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{file.meetingMinutes?.date}</span>
+                        </div>
+                        <h4 className="text-lg font-bold mb-2 group-hover:text-emerald-600 transition-colors">{file.meetingMinutes?.title}</h4>
+                        <p className="text-xs text-black/40 line-clamp-2 mb-4">{file.meetingMinutes?.summary}</p>
+                        <div className="flex items-center gap-2">
+                          {file.meetingMinutes?.participants.slice(0, 3).map((p, i) => (
+                            <div key={i} className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-[8px] font-bold border border-white">
+                              {p[0]}
+                            </div>
+                          ))}
+                          {file.meetingMinutes && file.meetingMinutes.participants.length > 3 && (
+                            <span className="text-[8px] font-bold text-black/20">+{file.meetingMinutes.participants.length - 3}</span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                    {files.filter(f => f.meetingMinutes).length === 0 && (
+                      <div className="col-span-2 py-20 text-center bg-white rounded-[40px] border border-dashed border-black/10">
+                        <Mic size={40} className="mx-auto text-black/10 mb-4" />
+                        <p className="text-sm text-black/40 font-medium">暂无会议录音记录</p>
+                      </div>
+                    )}
                   </div>
-                  <button 
-                    onClick={startRecording}
-                    className="px-8 py-4 bg-black text-white rounded-2xl font-bold flex items-center gap-3 hover:scale-105 transition-transform shadow-xl shadow-black/10"
-                  >
-                    开始录音
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  </button>
                 </div>
               )}
             </div>
@@ -703,13 +748,16 @@ export default function App() {
               <header className="h-14 border-b border-black/5 flex items-center justify-between px-6 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <FileText size={18} className="text-black/40" />
-                  <h2 className="text-sm font-semibold truncate max-w-[300px]">{activeFile?.name || '未选择文档'}</h2>
+                  <h2 className="text-sm font-semibold truncate max-w-[300px]">{activeFile?.name || '项目库概览'}</h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-black/5 rounded-lg transition-colors">
-                    <Maximize2 size={16} />
+                {activeFile && (
+                  <button 
+                    onClick={() => setActiveFileId(null)}
+                    className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                  >
+                    返回列表
                   </button>
-                </div>
+                )}
               </header>
               <div className="flex-1 overflow-y-auto p-12 bg-[#F9F9F7]">
                 {activeFile ? (
@@ -721,9 +769,47 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center opacity-20">
-                    <FileText size={64} className="mb-4" />
-                    <p className="text-lg font-bold">请在左侧选择或上传文档</p>
+                  <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <h3 className="text-3xl font-bold tracking-tight">项目库概览</h3>
+                        <p className="text-sm text-black/40">管理并深度研判所有已上传的商业计划书与行业报告</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      {files.filter(f => f.analysis).map(file => (
+                        <button 
+                          key={file.id}
+                          onClick={() => setActiveFileId(file.id)}
+                          className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm hover:shadow-md transition-all text-left flex items-center gap-6 group"
+                        >
+                          <div className="w-16 h-16 bg-black/5 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors">
+                            <FileText size={24} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-lg font-bold truncate">{file.analysis?.companyName}</h4>
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-bold uppercase rounded-full border border-emerald-100">
+                                Fit: {file.analysis?.industrialPromotion?.fitScore}
+                              </span>
+                            </div>
+                            <p className="text-xs text-black/40 line-clamp-1">{file.analysis?.onePageTeaser}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-[10px] font-bold text-black/20 uppercase tracking-widest mb-1">Valuation</p>
+                            <p className="text-sm font-mono font-bold">{file.analysis?.financials.valuationExpectation}</p>
+                          </div>
+                          <ChevronRight size={20} className="text-black/10 group-hover:text-black transition-colors" />
+                        </button>
+                      ))}
+                      {files.filter(f => f.analysis).length === 0 && (
+                        <div className="py-20 text-center bg-white rounded-[40px] border border-dashed border-black/10">
+                          <FileText size={40} className="mx-auto text-black/10 mb-4" />
+                          <p className="text-sm text-black/40 font-medium">暂无项目分析记录</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
