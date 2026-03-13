@@ -1,0 +1,5 @@
+{
+  "name": "投投有道数字员工",
+  "description": "面向一级市场（VC/PE、早期创投）的AI智能工作台，支持BP分析、尽调辅助、会议纪要录音与问答对话。",
+  "requestFramePermissions": ["microphone"]
+}
