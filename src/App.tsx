@@ -39,11 +39,12 @@ import {
 } from 'recharts';
 
 type AppMode = 'documents' | 'meetings' | 'chat' | 'dashboard';
-type AnalysisTab = 'financial' | 'industrial';
+type AnalysisTab = 'financial' | 'industrial' | 'screening' | 'comparison';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('dashboard');
   const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('financial');
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>(['sim-1']);
   const [files, setFiles] = useState<DocumentFile[]>([
     {
       id: 'sim-1',
@@ -116,6 +117,73 @@ export default function App() {
             employment: 150,
             industrialOutput: '带动相关产业产值超10亿元'
           }
+        },
+        preliminaryScreening: {
+          team: {
+            managementOverview: '公司核心管理团队由创始人张博士、李总及技术副总裁王工组成，均具备10年以上数据要素与隐私计算行业经验。',
+            keyPersonnel: [
+              {
+                name: '张博士',
+                role: '创始人 & CEO',
+                experience: '15年',
+                background: '清华大学计算机博士，曾任阿里数据事业部资深架构师。',
+                achievements: '主导研发了国内首个商用级隐私计算平台，拥有20余项核心专利。',
+                qualifications: '高级工程师，国家科技进步二等奖获得者。'
+              },
+              {
+                name: '李总',
+                role: '联合创始人 & 市场负责人',
+                experience: '12年',
+                background: '浙江大学MBA，嘉兴本地资深创业者。',
+                achievements: '成功搭建嘉兴市首个政务数据共享交换体系，覆盖30余个政府部门。',
+                qualifications: '嘉兴市领军人才，优秀创业导师。'
+              }
+            ],
+            teamAdvantages: '团队具备极强的“技术+市场”双轮驱动能力，既有顶尖的技术研发实力，又深谙本地政务数据运作逻辑，形成了极高的竞争门槛。'
+          },
+          industry: {
+            chainAnalysis: {
+              upstream: '数据提供方（政府部门、公共企事业单位、互联网平台等）。',
+              midstream: '数据要素运营商（数据清洗、脱敏、资产登记、隐私计算等服务商）。',
+              downstream: '数据应用方（金融机构、制造企业、智慧城市建设方等）。'
+            },
+            competitionLandscape: {
+              upstream: '资源高度集中在政府手中，准入门槛高。',
+              midstream: '目前处于群雄逐鹿阶段，技术领先与场景落地能力是核心。',
+              downstream: '需求旺盛但碎片化，需要极强的行业理解能力。'
+            },
+            trends: '数据要素市场化已上升为国家战略，隐私计算与授权运营成为核心技术路径，行业正从“实验期”迈入“爆发期”。'
+          },
+          competition: {
+            overallStatus: '行业竞争日益激烈，但区域性数据要素运营仍存在蓝海机会。',
+            competitors: [
+              {
+                name: '上海数据交易所',
+                advantages: '国家级平台，品牌影响力大，资源整合能力强。',
+                layout: '覆盖全国，重点关注大宗数据交易。',
+                gap: '在区域下沉服务和特定行业（如普惠金融）的精细化运营上存在不足。'
+              },
+              {
+                name: '数梦工场',
+                advantages: '深耕政务云多年，技术底座扎实。',
+                layout: '主要服务于省级政务大脑。',
+                gap: '在数据要素的市场化变现与商业模式创新上起步较晚。'
+              }
+            ],
+            targetAdvantages: '拥有南湖区独家授权试点，技术架构更贴合金融场景需求，响应速度快。',
+            targetDisadvantages: '品牌知名度尚在提升中，跨区域扩张面临地方保护壁垒。',
+            barriers: '技术壁垒（隐私计算算法）、资源壁垒（政府授权）、场景壁垒（金融机构深度集成）。'
+          },
+          risks: {
+            industryRisks: ['数据安全政策收紧', '行业标准尚未统一'],
+            enterpriseRisks: ['核心技术人才流失', '市场拓展不及预期'],
+            capitalMarketRisks: ['估值回调风险', '上市政策变动'],
+            impactAndTips: {
+              longTerm: '政策风险是核心，需持续关注国家数据局动向。',
+              midTerm: '市场竞争加剧，需快速建立行业壁垒。',
+              shortTerm: '现金流管理，需加快商业化落地。'
+            }
+          }
         }
       },
       meetingMinutes: {
@@ -137,7 +205,6 @@ export default function App() {
       }
     }
   ]);
-  const [activeFileId, setActiveFileId] = useState<string | null>('sim-1');
   const [isUploading, setIsUploading] = useState(false);
   
   // Chat State
@@ -166,7 +233,20 @@ export default function App() {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const activeFile = files.find(f => f.id === activeFileId);
+  const selectedFiles = files.filter(f => selectedFileIds.includes(f.id));
+  const activeFile = selectedFiles.length === 1 ? selectedFiles[0] : null;
+
+  const toggleFileSelection = (id: string, isMeeting: boolean) => {
+    setSelectedFileIds(prev => {
+      if (prev.includes(id)) {
+        const next = prev.filter(fid => fid !== id);
+        return next;
+      } else {
+        return [...prev, id];
+      }
+    });
+    setMode(isMeeting ? 'meetings' : 'documents');
+  };
 
   // Dashboard Stats (Mock data for demo - Jiaxing Nanhu Context)
   const dashboardStats = {
@@ -214,7 +294,7 @@ export default function App() {
 
       const docFile = await filePromise;
       setFiles(prev => [...prev, docFile]);
-      setActiveFileId(docFile.id);
+      setSelectedFileIds([docFile.id]);
 
       try {
         const analysis = await analyzeInvestmentDocument(docFile.content, docFile.name);
@@ -251,7 +331,7 @@ export default function App() {
             status: 'processing'
           };
           setFiles(prev => [...prev, newMeeting]);
-          setActiveFileId(newMeeting.id);
+          setSelectedFileIds([newMeeting.id]);
           setMode('meetings');
 
           try {
@@ -347,9 +427,9 @@ export default function App() {
           <button 
             onClick={() => {
               setMode('documents');
-              setActiveFileId(null);
+              setSelectedFileIds([]);
             }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'documents' && !activeFileId ? 'bg-black text-white' : 'hover:bg-black/5'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'documents' && selectedFileIds.length === 0 ? 'bg-black text-white' : 'hover:bg-black/5'}`}
           >
             <FileText size={18} />
             项目处理中心
@@ -357,9 +437,9 @@ export default function App() {
           <button 
             onClick={() => {
               setMode('meetings');
-              setActiveFileId(null);
+              setSelectedFileIds([]);
             }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'meetings' && !activeFileId ? 'bg-black text-white' : 'hover:bg-black/5'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${mode === 'meetings' && selectedFileIds.length === 0 ? 'bg-black text-white' : 'hover:bg-black/5'}`}
           >
             <Mic size={18} />
             会议纪要录音
@@ -374,18 +454,28 @@ export default function App() {
           
           <div className="mt-8 text-[10px] uppercase tracking-widest text-black/40 font-bold px-2 mb-2">History</div>
           {files.map(file => (
-            <button 
+            <div 
               key={file.id}
-              onClick={() => {
-                setActiveFileId(file.id);
-                setMode(file.meetingMinutes ? 'meetings' : 'documents');
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${activeFileId === file.id ? 'bg-black/5 font-medium' : 'hover:bg-black/5 text-black/60'}`}
+              className={`group flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all ${selectedFileIds.includes(file.id) ? 'bg-black/5 font-medium' : 'hover:bg-black/5 text-black/60'}`}
             >
-              {file.meetingMinutes ? <Mic size={16} /> : <FileText size={16} />}
-              <span className="truncate">{file.name}</span>
-              {file.status === 'processing' && <Loader2 size={12} className="animate-spin ml-auto" />}
-            </button>
+              <input 
+                type="checkbox" 
+                checked={selectedFileIds.includes(file.id)}
+                onChange={() => toggleFileSelection(file.id, !!file.meetingMinutes)}
+                className="w-4 h-4 rounded border-black/20 text-black focus:ring-black cursor-pointer"
+              />
+              <button 
+                onClick={() => {
+                  setSelectedFileIds([file.id]);
+                  setMode(file.meetingMinutes ? 'meetings' : 'documents');
+                }}
+                className="flex-1 flex items-center gap-3 truncate text-left"
+              >
+                {file.meetingMinutes ? <Mic size={16} /> : <FileText size={16} />}
+                <span className="truncate">{file.name}</span>
+                {file.status === 'processing' && <Loader2 size={12} className="animate-spin ml-auto" />}
+              </button>
+            </div>
           ))}
         </nav>
 
@@ -707,7 +797,10 @@ export default function App() {
                     {files.filter(f => f.meetingMinutes).map(file => (
                       <button 
                         key={file.id}
-                        onClick={() => setActiveFileId(file.id)}
+                        onClick={() => {
+                          setSelectedFileIds([file.id]);
+                          setMode('meetings');
+                        }}
                         className="bg-white p-8 rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-all text-left group"
                       >
                         <div className="flex justify-between items-start mb-4">
@@ -752,7 +845,7 @@ export default function App() {
                 </div>
                 {activeFile && (
                   <button 
-                    onClick={() => setActiveFileId(null)}
+                    onClick={() => setSelectedFileIds([])}
                     className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                   >
                     返回列表
@@ -781,7 +874,7 @@ export default function App() {
                       {files.filter(f => f.analysis).map(file => (
                         <button 
                           key={file.id}
-                          onClick={() => setActiveFileId(file.id)}
+                          onClick={() => setSelectedFileIds([file.id])}
                           className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm hover:shadow-md transition-all text-left flex items-center gap-6 group"
                         >
                           <div className="w-16 h-16 bg-black/5 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors">
@@ -834,6 +927,12 @@ export default function App() {
                     className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${analysisTab === 'industrial' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
                   >
                     产业与招商视角
+                  </button>
+                  <button 
+                    onClick={() => setAnalysisTab('screening')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${analysisTab === 'screening' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
+                  >
+                    投前初筛材料
                   </button>
                 </div>
               </header>
@@ -1119,6 +1218,197 @@ export default function App() {
                             </ResponsiveContainer>
                           </div>
                           <p className="mt-4 text-[10px] text-center text-black/40 font-bold uppercase tracking-widest">预计未来三年地方纳税额预测 (万元)</p>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="screening"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-8"
+                      >
+                        {/* Section 1: Team */}
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5">
+                          <div className="flex items-center gap-2 mb-6">
+                            <Users size={18} className="text-blue-500" />
+                            <h3 className="text-xl font-bold tracking-tight">一、企业团队介绍</h3>
+                          </div>
+                          <div className="space-y-6">
+                            <div className="p-6 bg-[#F5F5F0] rounded-2xl border border-black/5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">核心管理层概览</p>
+                              <p className="text-sm font-medium leading-relaxed">{activeFile.analysis.preliminaryScreening?.team.managementOverview}</p>
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">关键人物详情</p>
+                              {activeFile.analysis.preliminaryScreening?.team.keyPersonnel.map((person, i) => (
+                                <div key={i} className="p-6 bg-white rounded-2xl border border-black/5 shadow-sm">
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                      <h4 className="text-lg font-bold">{person.name}</h4>
+                                      <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">{person.role}</p>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-black/40 bg-black/5 px-2 py-1 rounded-md">{person.experience}</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-4 text-xs">
+                                    <div>
+                                      <p className="font-bold text-black/40 uppercase mb-1">过往履历</p>
+                                      <p className="text-black/70 leading-relaxed">{person.background}</p>
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-black/40 uppercase mb-1">核心成就</p>
+                                      <p className="text-black/70 leading-relaxed">{person.achievements}</p>
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-black/40 uppercase mb-1">专业资质</p>
+                                      <p className="text-black/70 leading-relaxed">{person.qualifications}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-2">团队优势总结</p>
+                              <p className="text-sm font-medium leading-relaxed text-emerald-900">{activeFile.analysis.preliminaryScreening?.team.teamAdvantages}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 2: Industry */}
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5">
+                          <div className="flex items-center gap-2 mb-6">
+                            <Network size={18} className="text-emerald-500" />
+                            <h3 className="text-xl font-bold tracking-tight">二、行业分析</h3>
+                          </div>
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-3 gap-4">
+                              {[
+                                { label: '上游 (供给端)', content: activeFile.analysis.preliminaryScreening?.industry.chainAnalysis.upstream },
+                                { label: '中游 (加工/开发端)', content: activeFile.analysis.preliminaryScreening?.industry.chainAnalysis.midstream },
+                                { label: '下游 (需求/变现端)', content: activeFile.analysis.preliminaryScreening?.industry.chainAnalysis.downstream },
+                              ].map((item, i) => (
+                                <div key={i} className="p-4 bg-[#F5F5F0] rounded-2xl border border-black/5">
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">{item.label}</p>
+                                  <p className="text-xs leading-relaxed">{item.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">各环节竞争格局</p>
+                              <div className="grid grid-cols-1 gap-3">
+                                {[
+                                  { key: 'upstream', label: '上游环节' },
+                                  { key: 'midstream', label: '中游环节' },
+                                  { key: 'downstream', label: '下游环节' }
+                                ].map((item) => (
+                                  <div key={item.key} className="flex gap-4 items-start p-4 bg-white rounded-2xl border border-black/5">
+                                    <div className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-widest text-black/40 pt-1">{item.label}</div>
+                                    <p className="text-xs leading-relaxed">{(activeFile.analysis.preliminaryScreening?.industry.competitionLandscape as any)[item.key]}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700 mb-2">行业发展趋势</p>
+                              <p className="text-sm font-medium leading-relaxed text-blue-900">{activeFile.analysis.preliminaryScreening?.industry.trends}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 3: Competition */}
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5">
+                          <div className="flex items-center gap-2 mb-6">
+                            <BarChart3 size={18} className="text-amber-500" />
+                            <h3 className="text-xl font-bold tracking-tight">三、竞争分析</h3>
+                          </div>
+                          <div className="space-y-6">
+                            <div className="p-6 bg-[#F5F5F0] rounded-2xl border border-black/5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">行业竞争态势总述</p>
+                              <p className="text-sm font-medium leading-relaxed">{activeFile.analysis.preliminaryScreening?.competition.overallStatus}</p>
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">核心竞争对手分析</p>
+                              <div className="grid grid-cols-1 gap-4">
+                                {activeFile.analysis.preliminaryScreening?.competition.competitors.map((comp, i) => (
+                                  <div key={i} className="p-6 bg-white rounded-2xl border border-black/5 shadow-sm">
+                                    <h4 className="text-lg font-bold mb-3">{comp.name}</h4>
+                                    <div className="grid grid-cols-3 gap-4 text-xs">
+                                      <div>
+                                        <p className="font-bold text-black/40 uppercase mb-1">核心优势</p>
+                                        <p className="text-black/70">{comp.advantages}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-black/40 uppercase mb-1">业务布局</p>
+                                        <p className="text-black/70">{comp.layout}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-black/40 uppercase mb-1">竞争差距</p>
+                                        <p className="text-black/70">{comp.gap}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-2">目标企业竞争优势</p>
+                                <p className="text-xs leading-relaxed text-emerald-900">{activeFile.analysis.preliminaryScreening?.competition.targetAdvantages}</p>
+                              </div>
+                              <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-red-700 mb-2">目标企业竞争劣势</p>
+                                <p className="text-xs leading-relaxed text-red-900">{activeFile.analysis.preliminaryScreening?.competition.targetDisadvantages}</p>
+                              </div>
+                            </div>
+                            <div className="p-6 bg-black text-white rounded-2xl">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">竞争壁垒总结</p>
+                              <p className="text-sm font-medium leading-relaxed">{activeFile.analysis.preliminaryScreening?.competition.barriers}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Section 4: Risks */}
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5">
+                          <div className="flex items-center gap-2 mb-6">
+                            <AlertTriangle size={18} className="text-red-500" />
+                            <h3 className="text-xl font-bold tracking-tight">四、投资风险</h3>
+                          </div>
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-3 gap-4">
+                              {[
+                                { label: '行业层面风险', list: activeFile.analysis.preliminaryScreening?.risks.industryRisks },
+                                { label: '企业层面风险', list: activeFile.analysis.preliminaryScreening?.risks.enterpriseRisks },
+                                { label: '资本市场层面风险', list: activeFile.analysis.preliminaryScreening?.risks.capitalMarketRisks },
+                              ].map((item, i) => (
+                                <div key={i} className="p-6 bg-[#F5F5F0] rounded-2xl border border-black/5">
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-4">{item.label}</p>
+                                  <ul className="space-y-3">
+                                    {item.list?.map((risk, j) => (
+                                      <li key={j} className="flex gap-2 items-start">
+                                        <div className="mt-1.5 w-1 h-1 rounded-full bg-black/20 shrink-0" />
+                                        <p className="text-[10px] leading-relaxed text-black/60">{risk}</p>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-8 bg-red-50 rounded-[32px] border border-red-100">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-red-700 mb-6">风险影响程度及提示</p>
+                              <div className="grid grid-cols-3 gap-8">
+                                {[
+                                  { label: '长期重度风险', content: activeFile.analysis.preliminaryScreening?.risks.impactAndTips.longTerm },
+                                  { label: '中期中度风险', content: activeFile.analysis.preliminaryScreening?.risks.impactAndTips.midTerm },
+                                  { label: '短期轻度风险', content: activeFile.analysis.preliminaryScreening?.risks.impactAndTips.shortTerm },
+                                ].map((item, i) => (
+                                  <div key={i} className="space-y-2">
+                                    <p className="text-xs font-bold text-red-900">{item.label}</p>
+                                    <p className="text-[10px] leading-relaxed text-red-700/80">{item.content}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     )}

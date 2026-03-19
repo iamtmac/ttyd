@@ -21,6 +21,56 @@ export interface IndustrialPromotionAnalysis {
   };
 }
 
+export interface PreliminaryScreening {
+  team: {
+    managementOverview: string;
+    keyPersonnel: {
+      name: string;
+      role: string;
+      experience: string;
+      background: string;
+      achievements: string;
+      qualifications: string;
+    }[];
+    teamAdvantages: string;
+  };
+  industry: {
+    chainAnalysis: {
+      upstream: string;
+      midstream: string;
+      downstream: string;
+    };
+    competitionLandscape: {
+      upstream: string;
+      midstream: string;
+      downstream: string;
+    };
+    trends: string;
+  };
+  competition: {
+    overallStatus: string;
+    competitors: {
+      name: string;
+      advantages: string;
+      layout: string;
+      gap: string;
+    }[];
+    targetAdvantages: string;
+    targetDisadvantages: string;
+    barriers: string;
+  };
+  risks: {
+    industryRisks: string[];
+    enterpriseRisks: string[];
+    capitalMarketRisks: string[];
+    impactAndTips: {
+      longTerm: string;
+      midTerm: string;
+      shortTerm: string;
+    };
+  };
+}
+
 export interface InvestmentAnalysis {
   companyName: string;
   onePageTeaser: string;
@@ -47,6 +97,7 @@ export interface InvestmentAnalysis {
   risks: string[];
   highlights: string[];
   industrialPromotion?: IndustrialPromotionAnalysis;
+  preliminaryScreening?: PreliminaryScreening;
 }
 
 export interface MeetingMinutes {
