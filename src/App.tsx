@@ -266,6 +266,14 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  useEffect(() => {
+    if (selectedFileIds.length > 1) {
+      setAnalysisTab('comparison');
+    } else if (selectedFileIds.length === 1 && analysisTab === 'comparison') {
+      setAnalysisTab('financial');
+    }
+  }, [selectedFileIds.length]);
+
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = event.target.files;
     if (!uploadedFiles) return;
@@ -700,7 +708,7 @@ export default function App() {
               {activeFile?.meetingMinutes ? (
                 <div className="max-w-4xl mx-auto space-y-8">
                   <button 
-                    onClick={() => setActiveFileId(null)}
+                    onClick={() => setSelectedFileIds([])}
                     className="flex items-center gap-2 text-xs font-bold text-black/40 hover:text-black transition-colors mb-4"
                   >
                     <ArrowRight size={14} className="rotate-180" />
@@ -934,16 +942,22 @@ export default function App() {
                   >
                     投前初筛材料
                   </button>
+                  <button 
+                    onClick={() => setAnalysisTab('comparison')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${analysisTab === 'comparison' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
+                  >
+                    项目对比
+                  </button>
                 </div>
               </header>
 
               <div className="p-8 space-y-8">
-                {!activeFile ? (
+                {selectedFiles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center opacity-20">
                     <LayoutDashboard size={48} className="mb-4" />
                     <p className="font-bold">等待文档分析</p>
                   </div>
-                ) : activeFile.status === 'processing' ? (
+                ) : selectedFiles.some(f => f.status === 'processing') ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <Loader2 size={48} className="animate-spin text-black/20" />
                     <div className="text-center">
@@ -951,9 +965,9 @@ export default function App() {
                       <p className="text-sm text-black/40">正在提取核心数据、创始人背景及市场竞争格局</p>
                     </div>
                   </div>
-                ) : activeFile.analysis ? (
+                ) : selectedFiles.every(f => f.analysis) ? (
                   <AnimatePresence mode="wait">
-                    {analysisTab === 'financial' ? (
+                    {analysisTab === 'financial' && activeFile ? (
                       <motion.div 
                         key="financial"
                         initial={{ opacity: 0, x: -20 }}
@@ -965,9 +979,9 @@ export default function App() {
                         <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5">
                           <div className="flex justify-between items-start mb-6">
                             <div>
-                              <h3 className="text-3xl font-bold tracking-tight mb-2">{activeFile.analysis.companyName}</h3>
+                              <h3 className="text-3xl font-bold tracking-tight mb-2">{activeFile.analysis?.companyName}</h3>
                               <div className="flex gap-2">
-                                {activeFile.analysis.highlights.map((h, i) => (
+                                {activeFile.analysis?.highlights.map((h, i) => (
                                   <span key={i} className="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-emerald-100">
                                     {h}
                                   </span>
@@ -976,11 +990,11 @@ export default function App() {
                             </div>
                             <div className="text-right">
                               <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-1">Valuation Expectation</p>
-                              <p className="text-xl font-mono font-bold">{activeFile.analysis.financials.valuationExpectation}</p>
+                              <p className="text-xl font-mono font-bold">{activeFile.analysis?.financials.valuationExpectation}</p>
                             </div>
                           </div>
                           <p className="text-lg leading-relaxed text-black/80 font-serif italic">
-                            "{activeFile.analysis.onePageTeaser}"
+                            "{activeFile.analysis?.onePageTeaser}"
                           </p>
                         </div>
 
@@ -1091,7 +1105,7 @@ export default function App() {
                           </div>
                         </div>
                       </motion.div>
-                    ) : (
+                    ) : analysisTab === 'industrial' && activeFile ? (
                       <motion.div 
                         key="industrial"
                         initial={{ opacity: 0, x: 20 }}
@@ -1220,7 +1234,7 @@ export default function App() {
                           <p className="mt-4 text-[10px] text-center text-black/40 font-bold uppercase tracking-widest">预计未来三年地方纳税额预测 (万元)</p>
                         </div>
                       </motion.div>
-                    ) : (
+                    ) : analysisTab === 'screening' && activeFile ? (
                       <motion.div 
                         key="screening"
                         initial={{ opacity: 0, x: 20 }}
@@ -1408,6 +1422,84 @@ export default function App() {
                                 ))}
                               </div>
                             </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="comparison"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-8"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-bold tracking-tight">项目多维对比视图</h3>
+                          <p className="text-xs text-black/40 font-bold uppercase tracking-widest">已选择 {selectedFiles.length} 个项目</p>
+                        </div>
+                        
+                        <div className="overflow-x-auto pb-6 -mx-8 px-8">
+                          <div className="flex gap-6 min-w-max">
+                            {selectedFiles.map(file => (
+                              <div key={file.id} className="w-[380px] shrink-0 space-y-6">
+                                {/* Header */}
+                                <div className="bg-white rounded-3xl p-6 shadow-sm border border-black/5 relative overflow-hidden">
+                                  <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 rounded-full -mr-12 -mt-12" />
+                                  <h4 className="text-lg font-bold mb-2 relative z-10">{file.analysis?.companyName}</h4>
+                                  <div className="flex gap-2 relative z-10">
+                                    {file.analysis?.highlights.slice(0, 2).map((h, i) => (
+                                      <span key={i} className="px-2 py-0.5 bg-black/5 text-[8px] font-bold uppercase rounded-full">
+                                        {h}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Team */}
+                                <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <Users size={14} className="text-blue-500" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">团队背景</p>
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-black/70 line-clamp-4">
+                                    {file.analysis?.preliminaryScreening?.team.managementOverview}
+                                  </p>
+                                </div>
+
+                                {/* Industry */}
+                                <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <Network size={14} className="text-emerald-500" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">行业趋势</p>
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-black/70 line-clamp-4">
+                                    {file.analysis?.preliminaryScreening?.industry.trends}
+                                  </p>
+                                </div>
+
+                                {/* Competition */}
+                                <div className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <BarChart3 size={14} className="text-amber-500" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">竞争优势</p>
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-black/70 line-clamp-4">
+                                    {file.analysis?.preliminaryScreening?.competition.targetAdvantages}
+                                  </p>
+                                </div>
+
+                                {/* Risks */}
+                                <div className="bg-white rounded-[32px] p-6 bg-red-50 border border-red-100 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <AlertTriangle size={14} className="text-red-500" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">核心风险</p>
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-red-900 font-medium">
+                                    {file.analysis?.preliminaryScreening?.risks.impactAndTips.longTerm}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </motion.div>
